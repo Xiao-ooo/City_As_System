@@ -1,55 +1,37 @@
 body {
     margin: 0;
-    background: #111; /* fallback color */
+    background: #111;
     color: #fff;
     font-family: Arial, sans-serif;
-}
-
-#chart {
+  }
+  
+  #chart {
     width: 100vw;
     height: 100vh;
     position: relative;
-
-    /* Background image */
-    background-image: url("bg.jpg"); /* replace with your JPG path */
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-}
-
-#infoBox {
+    background: url("bg.jpg") center/cover no-repeat;
+  }
+  
+  #infoBox {
     position: absolute;
-    left: 20px;
+    left: 50px;
     top: 50%;
     transform: translateY(-50%);
     background: rgba(0,0,0,0.7);
     padding: 15px 20px;
     border-radius: 10px;
-    color: #fff;
     font-size: 14px;
-    width: 150px;
-}
-
-#infoBox h3, #infoBox h4 {
-    margin-top: 5px;
-    margin-bottom: 5px;
-}
-
-/* Emoji-based legend instead of colored boxes */
-#infoBox .shape {
-    display: inline-block;
+    width: 160px;
+  }
+  
+  #infoBox h3, #infoBox h4 { margin:5px 0; }
+  
+  #infoBox .shape {
+    font-size: 18px;
     margin-right: 6px;
-    font-size: 18px; /* emoji size */
-    vertical-align: middle;
-}
-
-/* Optional: spacing for legend text */
-#infoBox span {
-    vertical-align: middle;
-}
-
-/* Tooltip */
-.tooltip {
+  }
+  
+  .tooltip {
     position: absolute;
     padding: 6px 10px;
     background: #000;
@@ -58,4 +40,5 @@ body {
     pointer-events: none;
     opacity: 0;
     font-size: 12px;
-}
+  }
+  
