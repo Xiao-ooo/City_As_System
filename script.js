@@ -170,7 +170,7 @@ function drawDays(activeIndex = null) {
   const timeEmojis = ["🌙", "🕛", "🌅", "🌞", "🌇"];
 
   // Increase distance between emojis and center
-  const expandedRadius = surroundingRadius * 1.5; // make them farther out
+  const expandedRadius = surroundingRadius * 1.4; // make them farther out
 
   weekData.forEach((d, i) => {
     const angle = i * angleStep - Math.PI / 2;
@@ -224,12 +224,13 @@ function showPatterns(day, index){
       .attr("text-anchor", "middle")
       .attr("dominant-baseline", "middle");
 
-    // Radial layout + jitter
-    const angle = (i / totalShapes) * 2 * Math.PI;
-    const distance = mainPatternRadius * (0.5 + Math.random()*0.5);
-    const jitter = 20;
-    const x = cx + Math.cos(angle)*distance + (Math.random()-0.5)*jitter;
-    const y = cy + Math.sin(angle)*distance + (Math.random()-0.5)*jitter;
+// Radial layout + jitter
+const angle = (i / totalShapes) * 2 * Math.PI;
+const distance = mainPatternRadius * (0.8 + Math.random() * 0.8); // was 0.5 → more spread
+const jitter = 40; // was 20 → looser scattering
+const x = cx + Math.cos(angle) * distance + (Math.random() - 0.5) * jitter;
+const y = cy + Math.sin(angle) * distance + (Math.random() - 0.5) * jitter;
+
 
     node.attr("transform",`translate(${x},${y})`);
     g.node().appendChild(shapeElem);
