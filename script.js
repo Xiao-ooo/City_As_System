@@ -160,37 +160,39 @@ const surroundingRadius = Math.min(maxRadiusX, maxRadiusY, 300);
 // Tooltip
 const tooltip = d3.select("body").append("div").attr("class","tooltip");
 
-// Draw day circles as suns
-function drawDays(activeIndex=null){
+// ==== Replace drawDays() ====
+
+function drawDays(activeIndex = null) {
   svg.selectAll(".dayPoint").remove();
-  const angleStep = 2*Math.PI/weekData.length;
+  const angleStep = (2 * Math.PI) / weekData.length;
 
-  weekData.forEach((d,i)=>{
-    const angle = i*angleStep - Math.PI/2;
-    const x = (i === activeIndex) ? cx : cx + Math.cos(angle)*surroundingRadius;
-    const y = (i === activeIndex) ? cy : cy + Math.sin(angle)*surroundingRadius;
+  // Emojis for different times of day
+  const timeEmojis = ["🌙", "🕛", "🌅", "🌞", "🌇"];
 
-    const g = svg.append("g").attr("class","dayPoint")
-      .attr("transform",`translate(${x},${y})`);
+  // Increase distance between emojis and center
+  const expandedRadius = surroundingRadius * 1.5; // make them farther out
 
-    // Sun emoji
+  weekData.forEach((d, i) => {
+    const angle = i * angleStep - Math.PI / 2;
+    const x = (i === activeIndex) ? cx : cx + Math.cos(angle) * expandedRadius;
+    const y = (i === activeIndex) ? cy : cy + Math.sin(angle) * expandedRadius;
+
+    const g = svg.append("g")
+      .attr("class", "dayPoint")
+      .attr("transform", `translate(${x},${y})`);
+
+    // Bigger clock/time emoji
     g.append("text")
-      .text("🌞")
-      .attr("font-size", (i === activeIndex ? 40 : 25))
-      .attr("text-anchor","middle")
-      .attr("dominant-baseline","middle")
-      .style("cursor","pointer")
-      .on("click", ()=>showPatterns(d, i));
-
-    // Day name above
-    g.append("text")
-      .text(d.day)
-      .attr("text-anchor","middle")
-      .attr("y",-45)
-      .attr("fill","#fff")
-      .style("font-size","12px");
+      .text(timeEmojis[i % timeEmojis.length])
+      .attr("font-size", i === activeIndex ? 80 : 60) // was 40/25 → now 80/60
+      .attr("text-anchor", "middle")
+      .attr("dominant-baseline", "middle")
+      .style("cursor", "pointer")
+      .on("click", () => showPatterns(d, i));
   });
 }
+
+
 
 // Show patterns for clicked day
 function showPatterns(day, index){
@@ -234,12 +236,15 @@ function showPatterns(day, index){
 
     // Bounce animation
     function bounce(){ 
-      const t = Date.now()/350;
-      const amplitude = 0.15;
-      const sScale = 1 + Math.sin(t) * amplitude;
-      node.attr("transform",`translate(${x},${y}) scale(${sScale})`);
+      const t = Date.now() / 400;          // slightly slower rhythm
+      const amplitude = 0.4;               // increased from 0.15 → 0.4 for more obvious shrinking/expanding
+      const baseScale = 1;                 // center scale
+      const sScale = baseScale + Math.sin(t) * amplitude;
+      
+      node.attr("transform", `translate(${x},${y}) scale(${sScale})`);
       requestAnimationFrame(bounce);
     }
+    
     bounce();
 
 // Tooltip
