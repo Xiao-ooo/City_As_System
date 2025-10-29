@@ -150,116 +150,140 @@ const svg = d3.select("#chart").append("svg")
   .attr("height", height);
 
 let dayIndex = 0;
+let activeClock = null; // 🌟 track which clock is active
 const mainPatternRadius = 250;
 
 // Compute safe radius for surrounding suns
-const maxRadiusX = width/2 - 50;   // padding
-const maxRadiusY = height/2 - 50;
+const maxRadiusX = width / 2 - 50;
+const maxRadiusY = height / 2 - 50;
 const surroundingRadius = Math.min(maxRadiusX, maxRadiusY, 300);
 
 // Tooltip
-const tooltip = d3.select("body").append("div").attr("class","tooltip");
+const tooltip = d3.select("body").append("div").attr("class", "tooltip");
 
-// ==== Replace drawDays() ====
-
-function drawDays(activeIndex = null) {
+// ==== drawDays() ====
+function drawDays() {
   svg.selectAll(".dayPoint").remove();
   const angleStep = (2 * Math.PI) / weekData.length;
 
-  // Emojis for different times of day
-  const timeEmojis = ["🌙", "🕛", "🌅", "🌞", "🌇"];
+  const timeEmojis = [
+    { emoji: "🕘", label: "9 PM" },
+    { emoji: "🕛", label: "12 AM" },
+    { emoji: "🕑", label: "2 AM" },
+    { emoji: "🕘", label: "9 AM" },
+    { emoji: "🕛", label: "12 PM" }
+  ];
 
-  // Increase distance between emojis and center
-  const expandedRadius = surroundingRadius * 1.4; // make them farther out
+  const expandedRadius = surroundingRadius * 1.4;
+  const groups = [];
 
   weekData.forEach((d, i) => {
     const angle = i * angleStep - Math.PI / 2;
-    const x = (i === activeIndex) ? cx : cx + Math.cos(angle) * expandedRadius;
-    const y = (i === activeIndex) ? cy : cy + Math.sin(angle) * expandedRadius;
+    const x = cx + Math.cos(angle) * expandedRadius;
+    const y = cy + Math.sin(angle) * expandedRadius;
 
     const g = svg.append("g")
       .attr("class", "dayPoint")
       .attr("transform", `translate(${x},${y})`);
 
-    // Bigger clock/time emoji
+    // 🕒 Clock emoji
     g.append("text")
-      .text(timeEmojis[i % timeEmojis.length])
-      .attr("font-size", i === activeIndex ? 80 : 60) // was 40/25 → now 80/60
+      .text(timeEmojis[i % timeEmojis.length].emoji)
+      .attr("font-size", 60)
       .attr("text-anchor", "middle")
       .attr("dominant-baseline", "middle")
-      .style("cursor", "pointer")
-      .on("click", () => showPatterns(d, i));
+      .style("cursor", "pointer");
+
+    // 🕓 Label under emoji
+    const label = g.append("text")
+      .text(timeEmojis[i % timeEmojis.length].label)
+      .attr("y", 36)
+      .attr("font-size", 13)
+      .attr("font-family", "'Roboto Mono', monospace")
+      .attr("font-weight", "400")
+      .attr("text-anchor", "middle")
+      .attr("fill", "#ffffff")
+      .attr("opacity", 0.9);
+
+    groups.push({ g, label, day: d });
+  });
+
+  // 🌟 Click handling — hide current label, show others
+  groups.forEach(({ g, label, day }, i) => {
+    g.on("click", () => {
+      groups.forEach(({ label: otherLabel }, j) => {
+        otherLabel.style("display", j === i ? "none" : "block");
+      });
+      showPatterns(day, i);
+      activeClock = i;
+    });
   });
 }
 
-
-
-// Show patterns for clicked day
-function showPatterns(day, index){
+function showPatterns(day, index) {
   dayIndex = index;
   drawDays(index);
   svg.selectAll(".pattern").remove();
-  const g = svg.append("g").attr("class","pattern");
+  const g = svg.append("g").attr("class", "pattern");
 
   let allShapes = [];
-  day.hours.forEach(hour=>{
-    if(hour.train) allShapes.push({type:"train", loudness:hour.train, label:hour.label});
-    if(hour.siren) allShapes.push({type:"siren", loudness:hour.siren, label:hour.label});
-    if(hour.people) allShapes.push({type:"people", loudness:hour.people, label:hour.label});
+  day.hours.forEach(hour => {
+    if (hour.train) allShapes.push({ type: "train", loudness: hour.train, label: hour.label });
+    if (hour.siren) allShapes.push({ type: "siren", loudness: hour.siren, label: hour.label });
+    if (hour.people) allShapes.push({ type: "people", loudness: hour.people, label: hour.label }); // ✅ FIXED
   });
 
   const totalShapes = allShapes.length;
 
-  allShapes.forEach((s,i)=>{
-    const shapeElem = document.createElementNS("http://www.w3.org/2000/svg","text");
+  allShapes.forEach((s, i) => {
+    const shapeElem = document.createElementNS("http://www.w3.org/2000/svg", "text");
     const node = d3.select(shapeElem);
 
-    // Size by loudness
     const minSize = 10;
     const maxSize = 40;
-    const baseSize = minSize + (maxSize - minSize) * (s.loudness/100);
+    const baseSize = minSize + (maxSize - minSize) * (s.loudness / 100);
 
     node.text(emojiMap[s.type] || "❓")
       .attr("font-size", baseSize)
       .attr("text-anchor", "middle")
       .attr("dominant-baseline", "middle");
 
-// Radial layout + jitter
-const angle = (i / totalShapes) * 2 * Math.PI;
-const distance = mainPatternRadius * (0.8 + Math.random() * 0.8); // was 0.5 → more spread
-const jitter = 40; // was 20 → looser scattering
-const x = cx + Math.cos(angle) * distance + (Math.random() - 0.5) * jitter;
-const y = cy + Math.sin(angle) * distance + (Math.random() - 0.5) * jitter;
+    const angle = (i / totalShapes) * 2 * Math.PI;
+    const distance = mainPatternRadius * (0.8 + Math.random() * 0.8);
+    const jitter = 40;
+    const x = cx + Math.cos(angle) * distance + (Math.random() - 0.5) * jitter;
+    const y = cy + Math.sin(angle) * distance + (Math.random() - 0.5) * jitter;
 
-
-    node.attr("transform",`translate(${x},${y})`);
+    node.attr("transform", `translate(${x},${y})`);
     g.node().appendChild(shapeElem);
 
-    // Bounce animation
-    function bounce(){ 
-      const t = Date.now() / 400;          // slightly slower rhythm
-      const amplitude = 0.4;               // increased from 0.15 → 0.4 for more obvious shrinking/expanding
-      const baseScale = 1;                 // center scale
+    function bounce() {
+      const t = Date.now() / 400;
+      const amplitude = 0.4;
+      const baseScale = 1;
       const sScale = baseScale + Math.sin(t) * amplitude;
-      
       node.attr("transform", `translate(${x},${y}) scale(${sScale})`);
       requestAnimationFrame(bounce);
     }
-    
     bounce();
 
-// Tooltip
-node.on("mousemove",(event)=>{
-    tooltip.html(`<b>${s.type.toUpperCase()}</b><br>Day: ${day.day}<br>Time: ${s.label}<br>Loudness: ${s.loudness}`)
-      .style("left",(event.pageX+15)+"px")
-      .style("top",(event.pageY-25)+"px")
-      .transition().duration(100).style("opacity",1);
-  }).on("mouseout",()=>{
-    tooltip.transition().duration(200).style("opacity",0);
-  });
-  
+    // Tooltip — will now correctly show the time
+    node.on("mousemove", (event) => {
+      tooltip.html(`
+        <b>${s.type.toUpperCase()}</b><br>
+        Day: ${day.day}<br>
+        Time: ${s.label}<br>
+        Loudness: ${s.loudness}
+      `)
+      .style("left", (event.pageX + 15) + "px")
+      .style("top", (event.pageY - 25) + "px")
+      .transition().duration(100).style("opacity", 1);
+    }).on("mouseout", () => {
+      tooltip.transition().duration(200).style("opacity", 0);
+    });
   });
 }
 
-// Initial draw
+
+// ==== Initial Draw ====
 drawDays();
